@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fútbol Miranda - Asociación</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
+<style>
+*{transition:all .15s ease}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+.page,.mp{display:none}
+.page.active,.mp.active{display:block}
+.modal{display:none}
+.modal.active{display:flex}
+@media(max-width:767px){#sidebar{position:fixed;top:0;left:0;height:100%;z-index:50;transform:translateX(-100%)}#sidebar.open{transform:translateX(0)}}
+</style>
+</head>
+<body class="bg-gray-100">
+
+<!-- ===== LOGIN ===== -->
+<div id="page-login" class="page active">
+  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-800 to-green-600 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+      <div class="text-center mb-8">
+        <img src="frontend/public/logo.png" alt="Fútbol Miranda" class="w-28 h-28 object-contain mx-auto mb-4" onerror="this.outerHTML='<div class=\'w-28 h-28 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4\'><span class=\'text-4xl text-white font-bold\'>AFM</span></div>'">
+        <h1 class="text-2xl font-bold text-gray-800">Fútbol Miranda</h1>
+        <p class="text-gray-500 text-sm">Asociación de Fútbol</p>
+      </div>
+      <form id="login-form" class="space-y-4">
+        <div id="login-error" class="bg-red-50 text-red-600 p-3 rounded-lg text-sm hidden"></div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
+          <input id="login-user" type="text" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none" placeholder="usuario" required>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+          <input id="login-pass" type="password" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none" placeholder="contraseña" required>
+        </div>
+        <button type="submit" class="w-full bg-green-700 text-white py-2.5 rounded-lg font-semibold hover:bg-green-800">Ingresar</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MAIN APP ===== -->
+<div id="page-main" class="page">
+  <!-- Navbar -->
+  <header class="bg-white shadow-sm border-b px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <button class="md:hidden text-xl" onclick="toggleSidebar()">☰</button>
+      <h1 class="text-lg font-semibold text-gray-800">Asociación de Fútbol Miranda</h1>
+    </div>
+    <div class="flex items-center gap-4">
+      <span class="text-sm text-gray-600 hidden sm:block" id="nav-username"></span>
+      <span id="nav-role" class="text-xs px-2 py-0.5 rounded-full capitalize"></span>
+      <button onclick="logout()" class="bg-red-500 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-red-600">Salir</button>
+    </div>
+  </header>
+
+  <div class="flex">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="w-64 bg-white shadow-lg min-h-[calc(100vh-57px)] flex-shrink-0 md:translate-x-0 transition-transform duration-200">
+      <div class="p-4 border-b">
+        <div class="flex items-center gap-3">
+          <img src="frontend/public/logo.png" alt="Fútbol Miranda" class="w-10 h-10 object-contain" onerror="this.outerHTML='<div class=\'w-10 h-10 bg-green-600 rounded-full flex items-center justify-center\'><span class=\'text-xs text-white font-bold\'>AFM</span></div>'">
+          <div>
+            <h2 class="font-bold text-sm">Fútbol Miranda</h2>
+            <p class="text-xs text-gray-500 capitalize" id="sidebar-role"></p>
+          </div>
+        </div>
+      </div>
+      <nav class="p-2" id="sidebar-nav"></nav>
+    </aside>
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-40 hidden md:hidden" onclick="toggleSidebar()"></div>
+
+    <!-- Content -->
+    <main class="flex-1 p-4 md:p-6 min-h-[calc(100vh-57px)] overflow-auto">
+
+      <!-- DASHBOARD -->
+      <div id="mp-dashboard" class="mp active">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Dashboard</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8" id="dash-cards"></div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div class="bg-white rounded-xl shadow-sm p-5">
+            <h3 class="font-semibold text-gray-700 mb-3 border-b pb-2">Jugadores por Categoría</h3>
+            <div id="dash-categorias" class="space-y-3"></div>
+          </div>
+          <div class="bg-white rounded-xl shadow-sm p-5">
+            <h3 class="font-semibold text-gray-700 mb-3 border-b pb-2">Distribución por Género</h3>
+            <div id="dash-genero" class="space-y-3"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- JUGADORES -->
+      <div id="mp-jugadores" class="mp">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <h2 class="text-2xl font-bold text-gray-800">Jugadores</h2>
+          <div class="flex gap-2">
+            <button onclick="exportJugadoresCSV()" class="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-blue-700">⬇ CSV</button>
+            <button onclick="showJugadorForm()" class="bg-green-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-800">+ Nuevo Jugador</button>
+          </div>
+        </div>
+        <div class="mb-4">
+          <div class="flex gap-2">
+            <input id="search-jugador" type="text" onkeyup="renderJugadores()" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none" placeholder="Buscar por nombre, apellido o DNI...">
+            <select id="filter-equipo" onchange="renderJugadores()" class="px-3 py-2 border border-gray-300 rounded-lg text-sm"></select>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-50 text-gray-600">
+                <tr><th class="text-left px-4 py-3 font-semibold">Ficha</th><th class="text-left px-4 py-3 font-semibold">Nombre</th><th class="text-left px-4 py-3 font-semibold">DNI</th><th class="text-left px-4 py-3 font-semibold">Género</th><th class="text-left px-4 py-3 font-semibold">Edad</th><th class="text-left px-4 py-3 font-semibold">Equipo</th><th class="text-right px-4 py-3 font-semibold">Acciones</th></tr>
+              </thead>
+              <tbody id="jugadores-tbody" class="divide-y"></tbody>
+            </table>
+          </div>
+          <div id="jugadores-empty" class="text-center text-gray-500 py-8 hidden">No se encontraron jugadores</div>
+        </div>
+      </div>
+
+      <!-- JUGADOR FORM -->
+      <div id="mp-jugador-form" class="mp">
+        <div class="flex items-center gap-4 mb-6">
+          <a onclick="showPage('mp','jugadores')" class="text-gray-500 hover:text-gray-700 cursor-pointer">&larr; Volver</a>
+          <h2 class="text-2xl font-bold text-gray-800" id="jform-title">Nuevo Jugador</h2>
+        </div>
+        <form id="jform" class="bg-white rounded-xl shadow-sm p-6 max-w-3xl">
+          <input type="hidden" id="jform-id">
+          <div class="flex items-start gap-6 mb-4">
+            <div class="flex flex-col items-center gap-2">
+              <div id="jf-foto-preview" class="w-28 h-28 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 text-gray-400 text-xs text-center">Sin<br>foto</div>
+              <label for="jf-foto" class="bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs cursor-pointer hover:bg-gray-300">Subir Foto</label>
+              <input type="file" id="jf-foto" accept="image/*" class="hidden" onchange="previewJugadorFoto(event)">
+              <button type="button" onclick="document.getElementById('jf-foto').value='';document.getElementById('jf-foto-preview').innerHTML='Sin<br>foto';document.getElementById('jf-foto-preview').className='w-28 h-28 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 text-gray-400 text-xs text-center'" class="text-xs text-red-500 hover:text-red-700">Quitar foto</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label><input id="jf-nombre" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" required></div>
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">Apellido *</label><input id="jf-apellido" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" required></div>
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">Fecha Nac. *</label><input type="date" id="jf-fecnac" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" required></div>
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">Género *</label><select id="jf-genero" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"><option value="masculino">Masculino</option><option value="femenino">Femenino</option><option value="mixto">Mixto</option></select></div>
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">DNI *</label><input id="jf-dni" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" required></div>
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label><input id="jf-tel" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"></div>
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">Email</label><input type="email" id="jf-email" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"></div>
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">Dirección</label><input id="jf-dir" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"></div>
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">Pie Hábil</label><select id="jf-pie" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"><option value="derecho">Derecho</option><option value="izquierdo">Izquierdo</option><option value="ambos">Ambos</option></select></div>
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">Talle Camiseta</label><select id="jf-tcam" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"><option value="">--</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option></select></div>
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">Talle Short</label><select id="jf-tshort" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"><option value="">--</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option></select></div>
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">Talle Zapatos</label><input id="jf-tzap" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Ej: 42"></div>
+          </div></div>
+          <h3 class="font-semibold text-gray-700 mt-6 mb-3">Contacto de Emergencia</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label><input id="jf-emnom" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"></div>
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label><input id="jf-emtel" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"></div>
+          </div>
+          <h3 class="font-semibold text-gray-700 mt-6 mb-3">Salud</h3>
+          <div><label class="block text-sm font-medium text-gray-700 mb-1">Alergias / Condiciones</label><textarea id="jf-alerg" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" rows="2"></textarea></div>
+          <div class="flex gap-3 mt-6">
+            <button type="submit" class="bg-green-700 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-800">Guardar</button>
+            <button type="button" onclick="showPage('mp','jugadores')" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-semibold hover:bg-gray-300">Cancelar</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- JUGADOR DETALLE -->
+      <div id="mp-jugador-ver" class="mp">
+        <div class="flex items-center gap-4 mb-6">
+          <a onclick="showPage('mp','jugadores')" class="text-gray-500 hover:text-gray-700 cursor-pointer">&larr; Volver</a>
+          <h2 class="text-2xl font-bold text-gray-800">Ficha del Jugador</h2>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm p-6" id="jdetalle-content"></div>
+      </div>
+
+      <!-- EQUIPOS -->
+      <div id="mp-equipos" class="mp">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-gray-800">Equipos</h2>
+          <button onclick="showEquipoForm()" class="bg-green-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-800">+ Nuevo Equipo</button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="equipos-grid"></div>
+      </div>
+
+      <!-- EQUIPO FORM -->
+      <div id="mp-equipo-form" class="mp">
+        <div class="flex items-center gap-4 mb-6">
+          <a onclick="showPage('mp','equipos')" class="text-gray-500 hover:text-gray-700 cursor-pointer">&larr; Volver</a>
+          <h2 class="text-2xl font-bold text-gray-800" id="eform-title">Nuevo Equipo</h2>
+        </div>
+        <form id="eform" class="bg-white rounded-xl shadow-sm p-6 max-w-lg">
+          <input type="hidden" id="ef-id">
+          <div class="flex items-start gap-4 mb-4">
+            <div class="flex flex-col items-center gap-2">
+              <div id="ef-logo-preview" class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 text-gray-400 text-xs text-center">Sin<br>logo</div>
+              <label for="ef-logo" class="bg-gray-200 text-gray-700 px-2 py-1 rounded-lg text-xs cursor-pointer hover:bg-gray-300">Subir Logo</label>
+              <input type="file" id="ef-logo" accept="image/*" class="hidden" onchange="previewEquipoLogo(event)">
+              <button type="button" onclick="document.getElementById('ef-logo').value='';document.getElementById('ef-logo-preview').innerHTML='Sin<br>logo';document.getElementById('ef-logo-preview').className='w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 text-gray-400 text-xs text-center'" class="text-xs text-red-500 hover:text-red-700">Quitar</button>
+            </div>
+            <div class="space-y-4 flex-1">
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label><input id="ef-nombre" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" required></div>
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">Categoría *</label><select id="ef-cat" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"></select></div>
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">Liga</label><select id="ef-liga" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"><option value="">Sin liga</option></select></div>
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">Entrenador (DT)</label><input id="ef-dt" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"></div>
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">Asistente</label><input id="ef-asi" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"></div>
+          </div>
+          </div>
+          <div class="flex gap-3 mt-6">
+            <button type="submit" class="bg-green-700 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-800">Guardar</button>
+            <button type="button" onclick="showPage('mp','equipos')" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-semibold hover:bg-gray-300">Cancelar</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- EQUIPO DETALLE -->
+      <div id="mp-equipo-ver" class="mp">
+        <div class="flex items-center gap-4 mb-6">
+          <a onclick="showPage('mp','equipos')" class="text-gray-500 hover:text-gray-700 cursor-pointer">&larr; Volver</a>
+          <h2 class="text-2xl font-bold text-gray-800" id="edet-nombre"></h2>
+          <button onclick="showEquipoForm()" class="ml-auto bg-green-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-800">Editar</button>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <div class="bg-white rounded-xl shadow-sm p-5">
+            <h3 class="font-semibold text-gray-700 mb-3 border-b pb-2">Información</h3>
+            <div id="edet-info" class="space-y-2 text-sm"></div>
+          </div>
+          <div class="lg:col-span-2 bg-white rounded-xl shadow-sm p-5">
+            <div class="flex justify-between items-center mb-3 border-b pb-2">
+              <h3 class="font-semibold text-gray-700">Plantilla <span id="edet-plantilla-count"></span></h3>
+              <button onclick="showAsignarModal()" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs hover:bg-blue-700">+ Asignar Jugador</button>
+            </div>
+            <div id="edet-plantilla" class="overflow-x-auto"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CATEGORÍAS -->
+      <div id="mp-categorias" class="mp">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-gray-800">Categorías</h2>
+          <button onclick="openModal('categoria')" class="bg-green-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-800">+ Nueva Categoría</button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="categorias-grid"></div>
+      </div>
+
+      <!-- LIGAS -->
+      <div id="mp-ligas" class="mp">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-gray-800">Ligas</h2>
+          <button onclick="openModal('liga')" class="bg-green-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-800">+ Nueva Liga</button>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-600"><tr><th class="text-left px-4 py-3 font-semibold">Nombre</th><th class="text-left px-4 py-3 font-semibold">Categoría</th><th class="text-left px-4 py-3 font-semibold">Temporada</th><th class="text-center px-4 py-3 font-semibold">Estado</th><th class="text-right px-4 py-3 font-semibold">Acciones</th></tr></thead>
+            <tbody id="ligas-tbody" class="divide-y"></tbody>
+          </table>
+          <div id="ligas-empty" class="text-center text-gray-500 py-8 hidden">No hay ligas registradas</div>
+        </div>
+      </div>
+
+      <!-- USUARIOS -->
+      <div id="mp-usuarios" class="mp">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-gray-800">Usuarios</h2>
+          <button onclick="openModal('usuario')" class="bg-green-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-800">+ Nuevo Usuario</button>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-600"><tr><th class="text-left px-4 py-3 font-semibold">Usuario</th><th class="text-left px-4 py-3 font-semibold">Email</th><th class="text-left px-4 py-3 font-semibold">Rol</th><th class="text-center px-4 py-3 font-semibold">Activo</th><th class="text-right px-4 py-3 font-semibold">Acciones</th></tr></thead>
+            <tbody id="usuarios-tbody" class="divide-y"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ===== MODALS ===== -->
+<!-- Categoría Modal -->
+<div id="modal-categoria" class="modal fixed inset-0 bg-black/50 z-50 items-center justify-center p-4">
+  <div class="bg-white rounded-xl p-6 w-full max-w-md">
+    <h3 class="font-bold text-lg mb-4" id="cat-modal-title">Nueva Categoría</h3>
+    <form id="cat-form" class="space-y-3">
+      <input type="hidden" id="cat-id">
+      <div><label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label><input id="cat-nombre" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" required></div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-1">Tipo</label><select id="cat-tipo" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"><option value="futbol_sala">Fútbol Sala</option><option value="futbol_campo">Fútbol Campo</option></select></div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-1">Género</label><select id="cat-genero" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"><option value="masculino">Masculino</option><option value="femenino">Femenino</option><option value="mixto">Mixto</option></select></div>
+      <div class="grid grid-cols-2 gap-3"><div><label class="block text-sm font-medium text-gray-700 mb-1">Edad mín.</label><input type="number" id="cat-edadmin" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"></div><div><label class="block text-sm font-medium text-gray-700 mb-1">Edad máx.</label><input type="number" id="cat-edadmax" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"></div></div>
+      <div class="flex gap-3 mt-4"><button type="submit" class="bg-green-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-800">Guardar</button><button type="button" onclick="closeModal('categoria')" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-300">Cancelar</button></div>
+    </form>
+  </div>
+</div>
+
+<!-- Liga Modal -->
+<div id="modal-liga" class="modal fixed inset-0 bg-black/50 z-50 items-center justify-center p-4">
+  <div class="bg-white rounded-xl p-6 w-full max-w-md">
+    <h3 class="font-bold text-lg mb-4" id="liga-modal-title">Nueva Liga</h3>
+    <form id="liga-form" class="space-y-3">
+      <input type="hidden" id="liga-id">
+      <div><label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label><input id="liga-nombre" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" required></div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-1">Categoría</label><select id="liga-cat" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"></select></div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-1">Temporada</label><input id="liga-temp" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="2026" required></div>
+      <div class="flex gap-3 mt-4"><button type="submit" class="bg-green-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-800">Guardar</button><button type="button" onclick="closeModal('liga')" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-300">Cancelar</button></div>
+    </form>
+  </div>
+</div>
+
+<!-- Usuario Modal -->
+<div id="modal-usuario" class="modal fixed inset-0 bg-black/50 z-50 items-center justify-center p-4">
+  <div class="bg-white rounded-xl p-6 w-full max-w-md">
+    <h3 class="font-bold text-lg mb-4" id="usr-modal-title">Nuevo Usuario</h3>
+    <form id="usr-form" class="space-y-3">
+      <input type="hidden" id="usr-id">
+      <div><label class="block text-sm font-medium text-gray-700 mb-1">Usuario</label><input id="usr-username" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" required></div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-1">Email</label><input type="email" id="usr-email" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" required></div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label><input type="password" id="usr-pass" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" required></div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-1">Rol</label><select id="usr-rol" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"><option value="superadmin">Superadmin</option><option value="admin">Admin</option><option value="entrenador">Entrenador</option><option value="visor">Visor</option></select></div>
+      <div class="flex gap-3 mt-4"><button type="submit" class="bg-green-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-800">Guardar</button><button type="button" onclick="closeModal('usuario')" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-300">Cancelar</button></div>
+    </form>
+  </div>
+</div>
+
+<!-- Asignar Jugador Modal -->
+<div id="modal-asignar" class="modal fixed inset-0 bg-black/50 z-50 items-center justify-center p-4">
+  <div class="bg-white rounded-xl p-6 w-full max-w-md">
+    <h3 class="font-bold text-lg mb-4">Asignar Jugador</h3>
+    <form id="asignar-form" class="space-y-3">
+      <input type="hidden" id="asig-equipoid">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Jugador</label>
+        <div class="relative">
+          <input type="text" id="asig-search" onkeyup="filtrarJugadoresAsignar()" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Escribí para buscar...">
+          <div id="asig-resultados" class="hidden absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-lg z-10"></div>
+          <input type="hidden" id="asig-jugador">
+          <div id="asig-seleccionado" class="hidden mt-1 text-sm text-green-700 font-medium"></div>
+        </div>
+      </div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-1">N° Camiseta</label><input type="number" id="asig-num" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"></div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-1">Posición</label><select id="asig-pos" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"><option value="">Seleccionar...</option><option value="arquero">Arquero</option><option value="defensa">Defensa</option><option value="mediocampista">Mediocampista</option><option value="delantero">Delantero</option><option value="ala">Ala</option><option value="pivot">Pivot</option><option value="cierre">Cierre</option></select></div>
+      <div class="flex gap-3 mt-4"><button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">Asignar</button><button type="button" onclick="closeModal('asignar')" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-300">Cancelar</button></div>
+    </form>
+  </div>
+</div>
+
+<script>
+// ===== DATA LAYER =====
+const STORE = {
+  get(k){try{return JSON.parse(localStorage.getItem('af_'+k))||[]}catch{return[]}},
+  set(k,v){localStorage.setItem('af_'+k,JSON.stringify(v))}
+};
+
+// Initialize with defaults if empty
+function initData(){
+  if(!STORE.get('usuarios').length){
+    STORE.set('usuarios',[
+      {id:1,username:'admin',email:'admin@asociacion.com',password:'admin123',role:'superadmin',activo:true},
+      {id:2,username:'entrenador1',email:'entrena@asociacion.com',password:'123456',role:'entrenador',activo:true},
+      {id:3,username:'visor1',email:'visor@asociacion.com',password:'123456',role:'visor',activo:true},
+    ]);
+  }
+  if(!STORE.get('categorias').length){
+    STORE.set('categorias',[
+      {id:1,nombre:'Sub-15 Sala Masculino',tipo:'futbol_sala',genero:'masculino',edad_min:13,edad_max:15},
+      {id:2,nombre:'Sub-17 Sala Masculino',tipo:'futbol_sala',genero:'masculino',edad_min:15,edad_max:17},
+      {id:3,nombre:'Libre Sala Masculino',tipo:'futbol_sala',genero:'masculino',edad_min:18,edad_max:99},
+      {id:4,nombre:'Libre Sala Femenino',tipo:'futbol_sala',genero:'femenino',edad_min:18,edad_max:99},
+      {id:5,nombre:'Sub-20 Campo Masculino',tipo:'futbol_campo',genero:'masculino',edad_min:18,edad_max:20},
+      {id:6,nombre:'Libre Campo Masculino',tipo:'futbol_campo',genero:'masculino',edad_min:21,edad_max:99},
+      {id:7,nombre:'Libre Campo Femenino',tipo:'futbol_campo',genero:'femenino',edad_min:18,edad_max:99},
+    ]);
+  }
+  if(!STORE.get('ligas').length){
+    STORE.set('ligas',[
+      {id:1,nombre:'Liga Municipal Sala',categoria_id:3,temporada:'2026',activa:true},
+      {id:2,nombre:'Liga Femenina Sala',categoria_id:4,temporada:'2026',activa:true},
+      {id:3,nombre:'Liga Campo Élite',categoria_id:6,temporada:'2026',activa:true},
+      {id:4,nombre:'Liga Juvenil Sala',categoria_id:2,temporada:'2026',activa:true},
+    ]);
+  }
+  if(!STORE.get('equipos').length){
+    STORE.set('equipos',[
+      {id:1,nombre:'Los Galácticos FC',categoria_id:3,liga_id:1,entrenador:'Roberto Díaz',asistente:'',logo_url:'',activo:true},
+      {id:2,nombre:'Las Estrellas',categoria_id:4,liga_id:2,entrenador:'Laura Medina',asistente:'',logo_url:'',activo:true},
+      {id:3,nombre:'Atlas FC',categoria_id:6,liga_id:3,entrenador:'Fernando Ríos',asistente:'',logo_url:'',activo:true},
+      {id:4,nombre:'Miranda United',categoria_id:7,liga_id:null,entrenador:'Carmen Vega',asistente:'',logo_url:'',activo:true},
+    ]);
+  }
+  if(!STORE.get('jugadores').length){
+    STORE.set('jugadores',[
+      {id:1,nro_ficha:'F-2026-0001',nombre:'Juan',apellido:'Pérez',fecha_nac:'2005-06-15',genero:'masculino',dni:'30.123.456',direccion:'Av. Principal, Miranda',telefono:'0412-1234567',email:'juan@email.com',pie:'derecho',foto_url:'',alergias:'Ninguna',contacto_emergencia_nombre:'María Pérez',contacto_emergencia_telefono:'0416-7654321',talle_camiseta:'M',talle_short:'M',talle_zapatos:'42',activo:true,equipo_id:1,numero_camiseta:9,posicion:'delantero'},
+      {id:2,nro_ficha:'F-2026-0002',nombre:'María',apellido:'González',fecha_nac:'2006-03-22',genero:'femenino',dni:'29.987.654',direccion:'Calle 5, Miranda',telefono:'0414-9876543',email:'maria@email.com',pie:'izquierdo',foto_url:'',alergias:'Polen',contacto_emergencia_nombre:'Carlos González',contacto_emergencia_telefono:'0416-1112233',talle_camiseta:'S',talle_short:'S',talle_zapatos:'38',activo:true,equipo_id:2,numero_camiseta:10,posicion:'mediocampista'},
+      {id:3,nro_ficha:'F-2026-0003',nombre:'Pedro',apellido:'Martínez',fecha_nac:'2004-11-08',genero:'masculino',dni:'31.456.789',direccion:'Urb. La Trinidad',telefono:'0426-5556667',email:'pedro@email.com',pie:'derecho',foto_url:'',alergias:'Ninguna',contacto_emergencia_nombre:'Ana Martínez',contacto_emergencia_telefono:'0412-3334445',talle_camiseta:'L',talle_short:'L',talle_zapatos:'44',activo:true,equipo_id:1,numero_camiseta:1,posicion:'arquero'},
+      {id:4,nro_ficha:'F-2026-0004',nombre:'Laura',apellido:'Rodríguez',fecha_nac:'2007-01-30',genero:'femenino',dni:'28.765.432',direccion:'Calle 10, Miranda',telefono:'0412-7778889',email:'laura@email.com',pie:'derecho',foto_url:'',alergias:'Ninguna',contacto_emergencia_nombre:'José Rodríguez',contacto_emergencia_telefono:'0416-5556667',talle_camiseta:'M',talle_short:'M',talle_zapatos:'37',activo:true,equipo_id:2,numero_camiseta:1,posicion:'arquero'},
+      {id:5,nro_ficha:'F-2026-0005',nombre:'Carlos',apellido:'López',fecha_nac:'2003-09-12',genero:'masculino',dni:'32.111.222',direccion:'Av. Libertador',telefono:'0414-3334445',email:'carlos@email.com',pie:'ambos',foto_url:'',alergias:'Penicilina',contacto_emergencia_nombre:'Sofía López',contacto_emergencia_telefono:'0426-7778889',talle_camiseta:'XL',talle_short:'XL',talle_zapatos:'43',activo:true,equipo_id:3,numero_camiseta:8,posicion:'mediocampista'},
+      {id:6,nro_ficha:'F-2026-0006',nombre:'Ana',apellido:'Fernández',fecha_nac:'2006-07-19',genero:'femenino',dni:'29.333.444',direccion:'Calle 8, Miranda',telefono:'0426-1112223',email:'ana@email.com',pie:'izquierdo',foto_url:'',alergias:'Ninguna',contacto_emergencia_nombre:'Luis Fernández',contacto_emergencia_telefono:'0412-8889990',talle_camiseta:'S',talle_short:'S',talle_zapatos:'36',activo:true,equipo_id:null,numero_camiseta:null,posicion:''},
+    ]);
+  }
+}
+
+// Helpers
+function uid(){return Date.now()+Math.floor(Math.random()*1000)}
+function getCategoria(id){return STORE.get('categorias').find(c=>c.id===id)}
+function getLiga(id){return STORE.get('ligas').find(l=>l.id===id)}
+function getEquipo(id){return STORE.get('equipos').find(e=>e.id===id)}
+function getJugador(id){return STORE.get('jugadores').find(j=>j.id===id)}
+function getUser(id){return STORE.get('usuarios').find(u=>u.id===id)}
+
+function edad(fecha){
+  const hoy=new Date(),nac=new Date(fecha);
+  let e=hoy.getFullYear()-nac.getFullYear();
+  if(hoy.getMonth()<nac.getMonth()||(hoy.getMonth()===nac.getMonth()&&hoy.getDate()<nac.getDate()))e--;
+  return e;
+}
+
+function readFileAsDataURL(file){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=()=>resolve(r.result);
+    r.onerror=reject;
+    r.readAsDataURL(file);
+  });
+}
+function previewJugadorFoto(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  readFileAsDataURL(file).then(url=>{
+    const div=document.getElementById('jf-foto-preview');
+    div.innerHTML=`<img src="${url}" class="w-full h-full object-cover">`;
+    div.className='w-28 h-28 bg-gray-100 rounded-full overflow-hidden';
+  });
+}
+function previewEquipoLogo(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  readFileAsDataURL(file).then(url=>{
+    const div=document.getElementById('ef-logo-preview');
+    div.innerHTML=`<img src="${url}" class="w-full h-full object-cover">`;
+    div.className='w-20 h-20 bg-gray-100 rounded-full overflow-hidden';
+  });
+}
+
+// ===== AUTH =====
+let currentUser=null;
+
+function login(e){
+  e.preventDefault();
+  const u=document.getElementById('login-user').value;
+  const p=document.getElementById('login-pass').value;
+  const err=document.getElementById('login-error');
+  const user=STORE.get('usuarios').find(x=>x.username===u&&x.password===p&&x.activo);
+  if(!user){err.classList.remove('hidden');err.textContent='Usuario o contraseña incorrectos';return}
+  err.classList.add('hidden');
+  currentUser=user;
+  localStorage.setItem('af_session',JSON.stringify(user));
+  document.getElementById('page-login').classList.remove('active');
+  document.getElementById('page-main').classList.add('active');
+  document.getElementById('nav-username').textContent=user.username;
+  document.getElementById('sidebar-role').textContent=user.role;
+  const badge=document.getElementById('nav-role');
+  badge.textContent=user.role;
+  const colors={superadmin:'bg-red-100 text-red-700',admin:'bg-purple-100 text-purple-700',entrenador:'bg-blue-100 text-blue-700',visor:'bg-gray-100 text-gray-700'};
+  badge.className='text-xs px-2 py-0.5 rounded-full '+(colors[user.role]||'');
+  renderAll();
+}
+
+function logout(){
+  currentUser=null;
+  localStorage.removeItem('af_session');
+  document.getElementById('page-main').classList.remove('active');
+  document.getElementById('page-login').classList.add('active');
+}
+
+function can(r){return currentUser&&['superadmin','admin'].includes(currentUser.role)||(r&&currentUser&&currentUser.role===r)}
+function canEdit(){return currentUser&&['superadmin','admin','entrenador'].includes(currentUser.role)}
+
+// ===== NAV =====
+const pages=['dashboard','jugadores','equipos','categorias','ligas','usuarios'];
+const icons={dashboard:'📊',jugadores:'👥',equipos:'🏆',categorias:'📋',ligas:'🏅',usuarios:'🔐'};
+const pageRoles={categorias:['superadmin','admin'],ligas:['superadmin','admin'],usuarios:['superadmin']};
+
+function showPage(type,page){
+  if(type==='mp'){
+    document.querySelectorAll('.mp').forEach(p=>p.classList.remove('active'));
+    document.getElementById('mp-'+page).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('bg-green-100','text-green-800','font-semibold'));
+    const nav=document.querySelector(`.nav-item[data-page="${page}"]`);
+    if(nav){nav.classList.add('bg-green-100','text-green-800','font-semibold')}
+    if(window.innerWidth<768)toggleSidebar();
+  }
+}
+
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('hidden');
+}
+
+function buildSidebar(){
+  const nav=document.getElementById('sidebar-nav');
+  nav.innerHTML=pages.map(p=>{
+    const roles=pageRoles[p]||['superadmin','admin','entrenador','visor'];
+    if(!roles.includes(currentUser.role))return'';
+    return`<a onclick="showPage('mp','${p}')" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 text-sm cursor-pointer text-gray-700 hover:bg-gray-100" data-page="${p}">${icons[p]} ${p.charAt(0).toUpperCase()+p.slice(1)}</a>`;
+  }).join('');
+}
+
+// ===== RENDER =====
+function renderAll(){
+  buildSidebar();
+  renderDashboard();
+  renderJugadores();
+  renderEquipos();
+  renderCategorias();
+  renderLigas();
+  renderUsuarios();
+  // populate selects
+  populateSelects();
+}
+
+function renderDashboard(){
+  const jug=STORE.get('jugadores').filter(j=>j.activo);
+  const eq=STORE.get('equipos').filter(e=>e.activo);
+  const cat=STORE.get('categorias');
+  const lig=STORE.get('ligas').filter(l=>l.activa);
+  document.getElementById('dash-cards').innerHTML=[
+    {l:'Jugadores',v:jug.length,c:'bg-blue-500',ic:'👥'},
+    {l:'Equipos',v:eq.length,c:'bg-green-500',ic:'🏆'},
+    {l:'Categorías',v:cat.length,c:'bg-purple-500',ic:'📋'},
+    {l:'Ligas activas',v:lig.length,c:'bg-orange-500',ic:'🏅'}
+  ].map(c=>`<div class="bg-white rounded-xl shadow-sm p-6 flex items-center gap-4"><div class="w-14 h-14 ${c.c} rounded-xl flex items-center justify-center text-2xl">${c.ic}</div><div><p class="text-3xl font-bold text-gray-800">${c.v}</p><p class="text-sm text-gray-500">${c.l}</p></div></div>`).join('');
+
+  // por categoria
+  const cats=document.getElementById('dash-categorias');
+  cats.innerHTML=cat.map(c=>{
+    const count=jug.filter(j=>{const e=getEquipo(j.equipo_id);return e&&e.categoria_id===c.id}).length;
+    const max=Math.max(1,...cat.map(c2=>{return jug.filter(j=>{const e=getEquipo(j.equipo_id);return e&&e.categoria_id===c2.id}).length}));
+    const pct=Math.round(count/max*100);
+    return`<div><div class="flex justify-between text-sm mb-1"><span class="truncate">${c.nombre}</span><span>${count}</span></div><div class="w-full bg-gray-200 rounded-full h-2"><div class="bg-blue-500 h-2 rounded-full" style="width:${pct}%"></div></div></div>`;
+  }).join('');
+
+  // por genero
+  const gen=document.getElementById('dash-genero');
+  const masc=jug.filter(j=>j.genero==='masculino').length;
+  const fem=jug.filter(j=>j.genero==='femenino').length;
+  const total=Math.max(1,masc+fem);
+  gen.innerHTML=`
+    <div><div class="flex justify-between text-sm mb-1"><span>Masculino</span><span>${masc} (${Math.round(masc/total*100)}%)</span></div><div class="w-full bg-gray-200 rounded-full h-2"><div class="bg-blue-500 h-2 rounded-full" style="width:${masc/total*100}%"></div></div></div>
+    <div><div class="flex justify-between text-sm mb-1"><span>Femenino</span><span>${fem} (${Math.round(fem/total*100)}%)</span></div><div class="w-full bg-gray-200 rounded-full h-2"><div class="bg-pink-500 h-2 rounded-full" style="width:${fem/total*100}%"></div></div></div>`;
+}
+
+function renderJugadores(){
+  const jug=STORE.get('jugadores').filter(j=>j.activo);
+  const q=document.getElementById('search-jugador').value.toLowerCase();
+  const feq=document.getElementById('filter-equipo').value;
+  const filtered=jug.filter(j=>{
+    const match=q===''||j.nombre.toLowerCase().includes(q)||j.apellido.toLowerCase().includes(q)||j.dni.includes(q);
+    const eqMatch=!feq||j.equipo_id==Number(feq);
+    return match&&eqMatch;
+  });
+  const tbody=document.getElementById('jugadores-tbody');
+  tbody.innerHTML=filtered.map(j=>{
+    const eq=j.equipo_id?getEquipo(j.equipo_id):null;
+    return`<tr class="hover:bg-gray-50">
+      <td class="px-4 py-3 font-mono text-xs text-gray-500">${j.nro_ficha}</td>
+      <td class="px-4 py-3 font-medium">${j.apellido}, ${j.nombre}</td>
+      <td class="px-4 py-3">${j.dni}</td>
+      <td class="px-4 py-3 capitalize">${j.genero}</td>
+      <td class="px-4 py-3">${edad(j.fecha_nac)}</td>
+      <td class="px-4 py-3">${eq?eq.nombre:'-'}</td>
+      <td class="px-4 py-3 text-right">
+        <a onclick="verJugador(${j.id})" class="text-blue-600 hover:text-blue-800 mr-2 cursor-pointer text-xs">Ver</a>
+        ${canEdit()?`<a onclick="editarJugador(${j.id})" class="text-green-600 hover:text-green-800 mr-2 cursor-pointer text-xs">Editar</a>`:''}
+        ${['superadmin','admin'].includes(currentUser.role)?`<a onclick="elimJugador(${j.id})" class="text-red-600 hover:text-red-800 cursor-pointer text-xs">Elim</a>`:''}
+      </td>
+    </tr>`;
+  }).join('');
+  document.getElementById('jugadores-empty').classList.toggle('hidden',filtered.length>0);
+}
+
+function renderEquipos(){
+  const eqs=STORE.get('equipos').filter(e=>e.activo);
+  document.getElementById('equipos-grid').innerHTML=eqs.map(e=>{
+    const cat=getCategoria(e.categoria_id);
+    const lig=e.liga_id?getLiga(e.liga_id):null;
+    return`<div onclick="verEquipo(${e.id})" class="bg-white rounded-xl shadow-sm p-5 hover:shadow-md cursor-pointer">
+      <div class="flex items-center gap-3 mb-3">
+        ${e.logo_url?`<img src="${e.logo_url}" class="w-12 h-12 rounded-full object-cover">`:`<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-xl font-bold text-green-700">${e.nombre[0]}</div>`}
+        <div><h3 class="font-bold text-gray-800">${e.nombre}</h3><p class="text-xs text-gray-500">${cat?cat.nombre:''}${lig?' • '+lig.nombre:''}</p></div>
+      </div>
+      ${e.entrenador?`<p class="text-sm text-gray-600">DT: ${e.entrenador}</p>`:''}
+    </div>`;
+  }).join('');
+}
+
+function renderCategorias(){
+  const cats=STORE.get('categorias');
+  document.getElementById('categorias-grid').innerHTML=cats.map(c=>{
+    const tipoLabel=c.tipo==='futbol_sala'?'Fútbol Sala':'Fútbol Campo';
+    const edadLabel=c.edad_min&&c.edad_max?`${c.edad_min}-${c.edad_max} años`:c.edad_min?`${c.edad_min}+ años`:'Todas las edades';
+    return`<div class="bg-white rounded-xl shadow-sm p-5">
+      <div class="flex justify-between items-start">
+        <div><h3 class="font-bold text-gray-800">${c.nombre}</h3><p class="text-xs text-gray-500 mt-1">${tipoLabel} • ${c.genero}</p><p class="text-xs text-gray-400 mt-1">Edad: ${edadLabel}</p></div>
+        ${['superadmin','admin'].includes(currentUser.role)?`<div class="flex gap-2"><a onclick="editarCategoria(${c.id})" class="text-blue-600 hover:text-blue-800 text-xs cursor-pointer">Editar</a><a onclick="elimCategoria(${c.id})" class="text-red-600 hover:text-red-800 text-xs cursor-pointer">Elim</a></div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderLigas(){
+  const ligs=STORE.get('ligas');
+  const tbody=document.getElementById('ligas-tbody');
+  tbody.innerHTML=ligs.map(l=>{
+    const cat=getCategoria(l.categoria_id);
+    return`<tr class="hover:bg-gray-50">
+      <td class="px-4 py-3 font-medium">${l.nombre}</td>
+      <td class="px-4 py-3 text-gray-600">${cat?cat.nombre:''}</td>
+      <td class="px-4 py-3">${l.temporada}</td>
+      <td class="px-4 py-3 text-center"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${l.activa?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}">${l.activa?'Activa':'Inactiva'}</span></td>
+      <td class="px-4 py-3 text-right">
+        ${['superadmin','admin'].includes(currentUser.role)?`<a onclick="editarLiga(${l.id})" class="text-blue-600 hover:text-blue-800 mr-2 cursor-pointer text-xs">Editar</a><a onclick="elimLiga(${l.id})" class="text-red-600 hover:text-red-800 cursor-pointer text-xs">Elim</a>`:''}
+      </td>
+    </tr>`;
+  }).join('');
+  document.getElementById('ligas-empty').classList.toggle('hidden',ligs.length>0);
+}
+
+function renderUsuarios(){
+  const usrs=STORE.get('usuarios');
+  const tbody=document.getElementById('usuarios-tbody');
+  tbody.innerHTML=usrs.map(u=>{
+    const colors={superadmin:'bg-red-100 text-red-700',admin:'bg-purple-100 text-purple-700',entrenador:'bg-blue-100 text-blue-700',visor:'bg-gray-100 text-gray-700'};
+    return`<tr class="hover:bg-gray-50">
+      <td class="px-4 py-3 font-medium">${u.username}</td>
+      <td class="px-4 py-3 text-gray-600">${u.email}</td>
+      <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium capitalize ${colors[u.role]||''}">${u.role}</span></td>
+      <td class="px-4 py-3 text-center"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${u.activo?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}">${u.activo?'Sí':'No'}</span></td>
+      <td class="px-4 py-3 text-right">
+        ${u.role!=='superadmin'?`<a onclick="elimUsuario(${u.id})" class="text-red-600 hover:text-red-800 cursor-pointer text-xs">Eliminar</a>`:''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function populateSelects(){
+  // filter-equipo
+  const feq=document.getElementById('filter-equipo');
+  const currentVal=feq.value;
+  feq.innerHTML='<option value="">Todos los equipos</option>'+
+    STORE.get('equipos').filter(e=>e.activo).map(e=>`<option value="${e.id}">${e.nombre}</option>`).join('');
+  feq.value=currentVal;
+
+  // ef-cat
+  const efc=document.getElementById('ef-cat');
+  efc.innerHTML=STORE.get('categorias').map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
+
+  // ef-liga
+  const efl=document.getElementById('ef-liga');
+  const eflVal=efl.value;
+  efl.innerHTML='<option value="">Sin liga</option>'+
+    STORE.get('ligas').filter(l=>l.activa).map(l=>`<option value="${l.id}">${l.nombre}</option>`).join('');
+  efl.value=eflVal;
+
+  // liga-cat
+  const lc=document.getElementById('liga-cat');
+  lc.innerHTML=STORE.get('categorias').map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
+}
+
+// ===== JUGADOR CRUD =====
+function showJugadorForm(){
+  document.getElementById('jform-title').textContent='Nuevo Jugador';
+  document.getElementById('jform-id').value='';
+  ['jf-nombre','jf-apellido','jf-fecnac','jf-dni','jf-tel','jf-email','jf-dir','jf-tzap','jf-emnom','jf-emtel','jf-alerg'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('jf-genero').value='masculino';
+  document.getElementById('jf-pie').value='derecho';
+  document.getElementById('jf-tcam').value='';
+  document.getElementById('jf-tshort').value='';
+  document.getElementById('jf-foto').value='';
+  document.getElementById('jf-foto-preview').innerHTML='Sin<br>foto';
+  document.getElementById('jf-foto-preview').className='w-28 h-28 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 text-gray-400 text-xs text-center';
+  showPage('mp','jugador-form');
+}
+function editarJugador(id){
+  const j=getJugador(id);
+  if(!j)return;
+  document.getElementById('jform-title').textContent='Editar Jugador';
+  document.getElementById('jform-id').value=j.id;
+  document.getElementById('jf-nombre').value=j.nombre;
+  document.getElementById('jf-apellido').value=j.apellido;
+  document.getElementById('jf-fecnac').value=j.fecha_nac;
+  document.getElementById('jf-genero').value=j.genero;
+  document.getElementById('jf-dni').value=j.dni;
+  document.getElementById('jf-tel').value=j.telefono||'';
+  document.getElementById('jf-email').value=j.email||'';
+  document.getElementById('jf-dir').value=j.direccion||'';
+  document.getElementById('jf-pie').value=j.pie;
+  document.getElementById('jf-tcam').value=j.talle_camiseta||'';
+  document.getElementById('jf-tshort').value=j.talle_short||'';
+  document.getElementById('jf-tzap').value=j.talle_zapatos||'';
+  document.getElementById('jf-emnom').value=j.contacto_emergencia_nombre||'';
+  document.getElementById('jf-emtel').value=j.contacto_emergencia_telefono||'';
+  document.getElementById('jf-alerg').value=j.alergias||'';
+  // foto
+  document.getElementById('jf-foto').value='';
+  const fp=document.getElementById('jf-foto-preview');
+  if(j.foto_url){
+    fp.innerHTML=`<img src="${j.foto_url}" class="w-full h-full object-cover">`;
+    fp.className='w-28 h-28 bg-gray-100 rounded-full overflow-hidden';
+  }else{
+    fp.innerHTML='Sin<br>foto';
+    fp.className='w-28 h-28 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 text-gray-400 text-xs text-center';
+  }
+  showPage('mp','jugador-form');
+}
+document.getElementById('jform').addEventListener('submit',function(e){
+  e.preventDefault();
+  const id=document.getElementById('jform-id').value;
+  const data={
+    nombre:document.getElementById('jf-nombre').value,
+    apellido:document.getElementById('jf-apellido').value,
+    fecha_nac:document.getElementById('jf-fecnac').value,
+    genero:document.getElementById('jf-genero').value,
+    dni:document.getElementById('jf-dni').value,
+    direccion:document.getElementById('jf-dir').value,
+    telefono:document.getElementById('jf-tel').value,
+    email:document.getElementById('jf-email').value,
+    pie:document.getElementById('jf-pie').value,
+    alergias:document.getElementById('jf-alerg').value,
+    contacto_emergencia_nombre:document.getElementById('jf-emnom').value,
+    contacto_emergencia_telefono:document.getElementById('jf-emtel').value,
+    talle_camiseta:document.getElementById('jf-tcam').value,
+    talle_short:document.getElementById('jf-tshort').value,
+    talle_zapatos:document.getElementById('jf-tzap').value,
+    foto_url: (()=>{const i=document.querySelector('#jf-foto-preview img');return i?i.src:''})(),
+    activo:true
+  };
+  const jugs=STORE.get('jugadores');
+  if(id){
+    const idx=jugs.findIndex(j=>j.id==id);
+    if(idx>-1){jugs[idx]={...jugs[idx],...data}}
+  }else{
+    const last=jugs.length?Math.max(...jugs.map(j=>j.id)):0;
+    data.id=uid();
+    data.nro_ficha=`F-${new Date().getFullYear()}-${String(last+1).padStart(4,'0')}`;
+    data.equipo_id=null;
+    data.numero_camiseta=null;
+    data.posicion='';
+    jugs.push(data);
+  }
+  STORE.set('jugadores',jugs);
+  showPage('mp','jugadores');
+  renderJugadores();
+});
+function verJugador(id){
+  const j=getJugador(id);
+  if(!j)return;
+  const eq=j.equipo_id?getEquipo(j.equipo_id):null;
+  document.getElementById('jdetalle-content').innerHTML=`
+    <div class="flex items-start gap-6 mb-6">
+      ${j.foto_url?`<img src="${j.foto_url}" class="w-24 h-24 rounded-full object-cover border-2 border-green-200">`:`<div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center text-3xl font-bold text-green-700">${j.nombre[0]}${j.apellido[0]}</div>`}
+      <div>
+        <h3 class="text-xl font-bold">${j.apellido}, ${j.nombre}</h3>
+        <p class="text-sm text-gray-500 font-mono">${j.nro_ficha}</p>
+        <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium mt-1 bg-green-100 text-green-700">Activo</span>
+      </div>
+      ${canEdit()?`<button onclick="editarJugador(${j.id});showPage('mp','jugadores')" class="ml-auto bg-green-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-800">Editar</button>`:''}
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div><h4 class="font-semibold text-gray-700 mb-3 border-b pb-2">Datos Personales</h4>
+        <div class="space-y-2 text-sm">
+          <div><span class="text-gray-500">DNI:</span> ${j.dni}</div>
+          <div><span class="text-gray-500">Fecha Nac.:</span> ${j.fecha_nac} (${edad(j.fecha_nac)} años)</div>
+          <div><span class="text-gray-500">Género:</span> <span class="capitalize">${j.genero}</span></div>
+          <div><span class="text-gray-500">Pie:</span> <span class="capitalize">${j.pie}</span></div>
+          <div><span class="text-gray-500">Teléfono:</span> ${j.telefono||'-'}</div>
+          <div><span class="text-gray-500">Email:</span> ${j.email||'-'}</div>
+          <div><span class="text-gray-500">Dirección:</span> ${j.direccion||'-'}</div>
+        </div>
+      </div>
+      <div><h4 class="font-semibold text-gray-700 mb-3 border-b pb-2">Talles</h4>
+        <div class="space-y-2 text-sm"><div><span class="text-gray-500">Camiseta:</span> ${j.talle_camiseta||'-'}</div><div><span class="text-gray-500">Short:</span> ${j.talle_short||'-'}</div><div><span class="text-gray-500">Zapatos:</span> ${j.talle_zapatos||'-'}</div></div>
+        <h4 class="font-semibold text-gray-700 mt-4 mb-3 border-b pb-2">Contacto Emergencia</h4>
+        <div class="space-y-2 text-sm"><div><span class="text-gray-500">Nombre:</span> ${j.contacto_emergencia_nombre||'-'}</div><div><span class="text-gray-500">Teléfono:</span> ${j.contacto_emergencia_telefono||'-'}</div></div>
+      </div>
+      <div><h4 class="font-semibold text-gray-700 mb-3 border-b pb-2">Salud</h4>
+        <div class="space-y-2 text-sm"><div><span class="text-gray-500">Alergias:</span> ${j.alergias||'Ninguna'}</div></div>
+        <h4 class="font-semibold text-gray-700 mt-4 mb-3 border-b pb-2">Equipo</h4>
+        ${eq?`<div class="bg-gray-50 p-2 rounded text-sm flex items-center gap-2">${eq.logo_url?`<img src="${eq.logo_url}" class="w-8 h-8 rounded-full object-cover">`:''}<div><div class="font-medium">${eq.nombre}</div><div class="text-gray-500">#${j.numero_camiseta||'-'} • <span class="capitalize">${j.posicion||'-'}</span></div></div></div>`:'<div class="text-sm text-gray-400">Sin equipo asignado</div>'}
+      </div>
+    </div>`;
+  showPage('mp','jugador-ver');
+}
+function elimJugador(id){
+  if(!confirm('¿Desactivar jugador?'))return;
+  const jugs=STORE.get('jugadores');
+  const j=jugs.find(x=>x.id===id);
+  if(j)j.activo=false;
+  STORE.set('jugadores',jugs);
+  renderJugadores();
+  renderDashboard();
+}
+
+function exportJugadoresCSV(){
+  const jugs=STORE.get('jugadores').filter(j=>j.activo);
+  let csv='Ficha,Nombre,Apellido,DNI,Género,Edad,Teléfono,Email\n';
+  jugs.forEach(j=>{csv+=`${j.nro_ficha},${j.nombre},${j.apellido},${j.dni},${j.genero},${edad(j.fecha_nac)},${j.telefono||''},${j.email||''}\n`});
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='jugadores.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ===== EQUIPO CRUD =====
+let equipoEditId=null;
+let equipoViewId=null;
+
+function showEquipoForm(){
+  equipoEditId=null;
+  document.getElementById('eform-title').textContent='Nuevo Equipo';
+  document.getElementById('ef-id').value='';
+  document.getElementById('ef-nombre').value='';
+  document.getElementById('ef-dt').value='';
+  document.getElementById('ef-asi').value='';
+  document.getElementById('ef-logo').value='';
+  document.getElementById('ef-logo-preview').innerHTML='Sin<br>logo';
+  document.getElementById('ef-logo-preview').className='w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 text-gray-400 text-xs text-center';
+  populateSelects();
+  document.getElementById('ef-cat').value='';
+  showPage('mp','equipo-form');
+}
+function editarEquipo(id){
+  equipoEditId=id;
+  const e=getEquipo(id);
+  if(!e)return;
+  document.getElementById('eform-title').textContent='Editar Equipo';
+  document.getElementById('ef-id').value=e.id;
+  document.getElementById('ef-nombre').value=e.nombre;
+  document.getElementById('ef-dt').value=e.entrenador||'';
+  document.getElementById('ef-asi').value=e.asistente||'';
+  // logo
+  document.getElementById('ef-logo').value='';
+  const lp=document.getElementById('ef-logo-preview');
+  if(e.logo_url){
+    lp.innerHTML=`<img src="${e.logo_url}" class="w-full h-full object-cover">`;
+    lp.className='w-20 h-20 bg-gray-100 rounded-full overflow-hidden';
+  }else{
+    lp.innerHTML='Sin<br>logo';
+    lp.className='w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 text-gray-400 text-xs text-center';
+  }
+  populateSelects();
+  document.getElementById('ef-cat').value=e.categoria_id;
+  document.getElementById('ef-liga').value=e.liga_id||'';
+  showPage('mp','equipo-form');
+}
+document.getElementById('eform').addEventListener('submit',function(e){
+  e.preventDefault();
+  const id=document.getElementById('ef-id').value;
+  const data={
+    nombre:document.getElementById('ef-nombre').value,
+    categoria_id:Number(document.getElementById('ef-cat').value),
+    liga_id:document.getElementById('ef-liga').value?Number(document.getElementById('ef-liga').value):null,
+    entrenador:document.getElementById('ef-dt').value,
+    asistente:document.getElementById('ef-asi').value,
+    logo_url: (()=>{const i=document.querySelector('#ef-logo-preview img');return i?i.src:''})(),
+    activo:true
+  };
+  const eqs=STORE.get('equipos');
+  if(equipoEditId){
+    const idx=eqs.findIndex(x=>x.id===equipoEditId);
+    if(idx>-1)eqs[idx]={...eqs[idx],...data};
+    equipoEditId=null;
+  }else{
+    data.id=uid();
+    eqs.push(data);
+  }
+  STORE.set('equipos',eqs);
+  showPage('mp','equipos');
+  renderEquipos();
+  renderDashboard();
+});
+function verEquipo(id){
+  equipoViewId=id;
+  const e=getEquipo(id);
+  if(!e)return;
+  const cat=getCategoria(e.categoria_id);
+  const lig=e.liga_id?getLiga(e.liga_id):null;
+  document.getElementById('edet-nombre').textContent=e.nombre;
+  document.getElementById('edet-info').innerHTML=`
+    <div class="flex items-center gap-3 mb-3">${e.logo_url?`<img src="${e.logo_url}" class="w-16 h-16 rounded-full object-cover">`:`<div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-xl font-bold text-green-700">${e.nombre[0]}</div>`}<div><span class="text-lg font-bold">${e.nombre}</span></div></div>
+    <div><span class="text-gray-500">Categoría:</span> ${cat?cat.nombre:''}</div>
+    <div><span class="text-gray-500">Liga:</span> ${lig?lig.nombre:'-'}</div>
+    <div><span class="text-gray-500">DT:</span> ${e.entrenador||'-'}</div>
+    <div><span class="text-gray-500">Asistente:</span> ${e.asistente||'-'}</div>
+    <div class="mt-4"><button onclick="editarEquipo(${e.id})" class="bg-blue-600 text-white px-3 py-1.5 rounded text-xs hover:bg-blue-700">Editar equipo</button></div>`;
+
+  const jugs=STORE.get('jugadores').filter(j=>j.activo&&j.equipo_id===e.id);
+  document.getElementById('edet-plantilla-count').textContent=`(${jugs.length})`;
+  if(jugs.length){
+    let html=`<table class="w-full text-sm"><thead><tr class="text-gray-500 text-xs"><th class="text-left px-2 py-2">#</th><th class="text-left px-2 py-2">Jugador</th><th class="text-left px-2 py-2">Posición</th><th class="text-left px-2 py-2">Edad</th><th class="text-right px-2 py-2">Acción</th></tr></thead><tbody class="divide-y">`;
+    jugs.forEach(j=>{
+      html+=`<tr class="hover:bg-gray-50"><td class="px-2 py-2 font-mono">${j.numero_camiseta||'-'}</td><td class="px-2 py-2"><a onclick="verJugador(${j.id})" class="text-blue-600 hover:underline cursor-pointer">${j.apellido}, ${j.nombre}</a></td><td class="px-2 py-2 capitalize">${j.posicion||'-'}</td><td class="px-2 py-2">${edad(j.fecha_nac)}</td><td class="px-2 py-2 text-right">${canEdit()?`<a onclick="removerJugadorEq(${e.id},${j.id})" class="text-red-500 hover:text-red-700 text-xs cursor-pointer">Quitar</a>`:''}</td></tr>`;
+    });
+    html+='</tbody></table>';
+    document.getElementById('edet-plantilla').innerHTML=html;
+  }else{
+    document.getElementById('edet-plantilla').innerHTML='<p class="text-gray-400 text-sm py-4 text-center">Sin jugadores asignados</p>';
+  }
+  showPage('mp','equipo-ver');
+}
+function removerJugadorEq(eqId,jugId){
+  if(!confirm('¿Remover jugador del equipo?'))return;
+  const jugs=STORE.get('jugadores');
+  const j=jugs.find(x=>x.id===jugId);
+  if(j){j.equipo_id=null;j.numero_camiseta=null;j.posicion=''}
+  STORE.set('jugadores',jugs);
+  verEquipo(eqId);
+}
+function showAsignarModal(){
+  const eq=equipoViewId;
+  if(!eq)return;
+  document.getElementById('asig-equipoid').value=eq;
+  document.getElementById('asig-search').value='';
+  document.getElementById('asig-search').disabled=false;
+  document.getElementById('asig-jugador').value='';
+  document.getElementById('asig-resultados').classList.add('hidden');
+  document.getElementById('asig-resultados').innerHTML='';
+  document.getElementById('asig-seleccionado').classList.add('hidden');
+  document.getElementById('asig-num').value='';
+  document.getElementById('asig-pos').value='';
+  openModal('asignar');
+}
+function filtrarJugadoresAsignar(){
+  const q=document.getElementById('asig-search').value.toLowerCase();
+  const eq=Number(document.getElementById('asig-equipoid').value);
+  const div=document.getElementById('asig-resultados');
+  if(!q){div.classList.add('hidden');return}
+  const jugs=STORE.get('jugadores').filter(j=>j.activo&&j.equipo_id!==eq);
+  const filtrados=jugs.filter(j=>j.nombre.toLowerCase().includes(q)||j.apellido.toLowerCase().includes(q)||j.dni.includes(q));
+  if(!filtrados.length){div.innerHTML='<div class="px-3 py-2 text-gray-400 text-sm">Sin resultados</div>';div.classList.remove('hidden');return}
+  div.innerHTML=filtrados.map(j=>`<div onclick="seleccionarJugadorAsignar(${j.id},'${(j.apellido+', '+j.nombre+' ('+j.dni+')').replace(/'/g,'')}')" class="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm border-b">${j.apellido}, ${j.nombre} <span class="text-gray-400">${j.dni}</span></div>`).join('');
+  div.classList.remove('hidden');
+}
+function seleccionarJugadorAsignar(id,label){
+  document.getElementById('asig-jugador').value=id;
+  document.getElementById('asig-search').value=label;
+  document.getElementById('asig-search').disabled=true;
+  document.getElementById('asig-resultados').classList.add('hidden');
+  document.getElementById('asig-seleccionado').textContent='✓ '+label;
+  document.getElementById('asig-seleccionado').classList.remove('hidden');
+}
+document.getElementById('asignar-form').addEventListener('submit',function(e){
+  e.preventDefault();
+  const eqId=Number(document.getElementById('asig-equipoid').value);
+  const jugId=Number(document.getElementById('asig-jugador').value);
+  if(!jugId){alert('Seleccioná un jugador');return}
+  const jugs=STORE.get('jugadores');
+  const j=jugs.find(x=>x.id===jugId);
+  if(j){
+    j.equipo_id=eqId;
+    j.numero_camiseta=document.getElementById('asig-num').value?Number(document.getElementById('asig-num').value):null;
+    j.posicion=document.getElementById('asig-pos').value;
+  }
+  STORE.set('jugadores',jugs);
+  closeModal('asignar');
+  verEquipo(eqId);
+});
+
+// ===== CATEGORIA CRUD =====
+let catEditId=null;
+document.getElementById('cat-form').addEventListener('submit',function(e){
+  e.preventDefault();
+  const data={
+    nombre:document.getElementById('cat-nombre').value,
+    tipo:document.getElementById('cat-tipo').value,
+    genero:document.getElementById('cat-genero').value,
+    edad_min:document.getElementById('cat-edadmin').value?Number(document.getElementById('cat-edadmin').value):null,
+    edad_max:document.getElementById('cat-edadmax').value?Number(document.getElementById('cat-edadmax').value):null,
+  };
+  const cats=STORE.get('categorias');
+  if(catEditId){
+    const idx=cats.findIndex(x=>x.id===catEditId);
+    if(idx>-1)cats[idx]={...cats[idx],...data};
+    catEditId=null;
+  }else{
+    data.id=uid();
+    cats.push(data);
+  }
+  STORE.set('categorias',cats);
+  closeModal('categoria');
+  renderCategorias();
+  renderDashboard();
+  populateSelects();
+});
+function editarCategoria(id){
+  catEditId=id;
+  const c=getCategoria(id);
+  document.getElementById('cat-modal-title').textContent='Editar Categoría';
+  document.getElementById('cat-id').value=c.id;
+  document.getElementById('cat-nombre').value=c.nombre;
+  document.getElementById('cat-tipo').value=c.tipo;
+  document.getElementById('cat-genero').value=c.genero;
+  document.getElementById('cat-edadmin').value=c.edad_min||'';
+  document.getElementById('cat-edadmax').value=c.edad_max||'';
+  openModal('categoria');
+}
+function elimCategoria(id){
+  if(!confirm('¿Eliminar categoría?'))return;
+  const cats=STORE.get('categorias').filter(x=>x.id!==id);
+  STORE.set('categorias',cats);
+  renderCategorias();
+  renderDashboard();
+  populateSelects();
+}
+
+// ===== LIGA CRUD =====
+let ligaEditId=null;
+document.getElementById('liga-form').addEventListener('submit',function(e){
+  e.preventDefault();
+  const data={
+    nombre:document.getElementById('liga-nombre').value,
+    categoria_id:Number(document.getElementById('liga-cat').value),
+    temporada:document.getElementById('liga-temp').value,
+    activa:true
+  };
+  const ligs=STORE.get('ligas');
+  if(ligaEditId){
+    const idx=ligs.findIndex(x=>x.id===ligaEditId);
+    if(idx>-1)ligs[idx]={...ligs[idx],...data};
+    ligaEditId=null;
+  }else{
+    data.id=uid();
+    ligs.push(data);
+  }
+  STORE.set('ligas',ligs);
+  closeModal('liga');
+  renderLigas();
+  renderDashboard();
+  populateSelects();
+});
+function editarLiga(id){
+  ligaEditId=id;
+  const l=getLiga(id);
+  document.getElementById('liga-modal-title').textContent='Editar Liga';
+  document.getElementById('liga-id').value=l.id;
+  document.getElementById('liga-nombre').value=l.nombre;
+  document.getElementById('liga-temp').value=l.temporada;
+  populateSelects();
+  document.getElementById('liga-cat').value=l.categoria_id;
+  openModal('liga');
+}
+function elimLiga(id){
+  if(!confirm('¿Eliminar liga?'))return;
+  const ligs=STORE.get('ligas').filter(x=>x.id!==id);
+  STORE.set('ligas',ligs);
+  renderLigas();
+  renderDashboard();
+  populateSelects();
+}
+
+// ===== USUARIO CRUD =====
+document.getElementById('usr-form').addEventListener('submit',function(e){
+  e.preventDefault();
+  const id=document.getElementById('usr-id').value;
+  const data={
+    username:document.getElementById('usr-username').value,
+    email:document.getElementById('usr-email').value,
+    password:document.getElementById('usr-pass').value,
+    role:document.getElementById('usr-rol').value,
+    activo:true
+  };
+  const usrs=STORE.get('usuarios');
+  if(id){
+    const idx=usrs.findIndex(x=>x.id==id);
+    if(idx>-1){
+      const upd={...usrs[idx],username:data.username,email:data.email,role:data.role};
+      if(data.password)upd.password=data.password;
+      usrs[idx]=upd;
+    }
+  }else{
+    if(usrs.find(x=>x.username===data.username)){alert('Usuario ya existe');return}
+    data.id=uid();
+    usrs.push(data);
+  }
+  STORE.set('usuarios',usrs);
+  closeModal('usuario');
+  renderUsuarios();
+});
+function elimUsuario(id){
+  if(!confirm('¿Eliminar usuario?'))return;
+  const usrs=STORE.get('usuarios').filter(x=>x.id!==id);
+  STORE.set('usuarios',usrs);
+  renderUsuarios();
+}
+
+// ===== MODALS =====
+function openModal(name){
+  document.getElementById('modal-'+name).classList.add('active');
+}
+function closeModal(name){
+  document.getElementById('modal-'+name).classList.remove('active');
+}
+// reset modal forms on open
+document.querySelectorAll('.modal form').forEach(f=>{
+  f.addEventListener('submit',function(e){e.preventDefault()});
+});
+// re-setup cat modal open
+const origOpenModal=openModal;
+openModal=function(name){
+  if(name==='categoria'&&!catEditId){
+    document.getElementById('cat-modal-title').textContent='Nueva Categoría';
+    document.getElementById('cat-id').value='';
+    document.getElementById('cat-nombre').value='';
+    document.getElementById('cat-tipo').value='futbol_sala';
+    document.getElementById('cat-genero').value='masculino';
+    document.getElementById('cat-edadmin').value='';
+    document.getElementById('cat-edadmax').value='';
+  }
+  if(name==='liga'&&!ligaEditId){
+    document.getElementById('liga-modal-title').textContent='Nueva Liga';
+    document.getElementById('liga-id').value='';
+    document.getElementById('liga-nombre').value='';
+    document.getElementById('liga-temp').value=new Date().getFullYear().toString();
+    populateSelects();
+  }
+  if(name==='usuario'){
+    document.getElementById('usr-modal-title').textContent='Nuevo Usuario';
+    document.getElementById('usr-id').value='';
+    document.getElementById('usr-username').value='';
+    document.getElementById('usr-email').value='';
+    document.getElementById('usr-pass').value='';
+    document.getElementById('usr-rol').value='visor';
+  }
+  document.getElementById('modal-'+name).classList.add('active');
+};
+
+// ===== INIT =====
+document.getElementById('login-form').addEventListener('submit',login);
+// Check for existing session
+const session=localStorage.getItem('af_session');
+if(session){
+  try{
+    currentUser=JSON.parse(session);
+    const valid=STORE.get('usuarios').find(u=>u.id===currentUser.id&&u.activo);
+    if(valid){
+      document.getElementById('page-login').classList.remove('active');
+      document.getElementById('page-main').classList.add('active');
+      document.getElementById('nav-username').textContent=currentUser.username;
+      document.getElementById('sidebar-role').textContent=currentUser.role;
+      const badge=document.getElementById('nav-role');
+      badge.textContent=currentUser.role;
+      const colors={superadmin:'bg-red-100 text-red-700',admin:'bg-purple-100 text-purple-700',entrenador:'bg-blue-100 text-blue-700',visor:'bg-gray-100 text-gray-700'};
+      badge.className='text-xs px-2 py-0.5 rounded-full '+(colors[currentUser.role]||'');
+      renderAll();
+    }
+  }catch(e){}
+}
+initData();
+
+// Close modals on overlay click
+document.querySelectorAll('.modal').forEach(m=>{
+  m.addEventListener('click',function(e){
+    if(e.target===this)this.classList.remove('active');
+  });
+});
+</script>
+</body>
+</html>
